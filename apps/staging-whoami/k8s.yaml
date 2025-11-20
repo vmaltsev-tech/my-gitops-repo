@@ -20,12 +20,16 @@ spec:
     metadata:
       labels:
         app: whoami
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/"
     spec:
       serviceAccountName: whoami-sa
       automountServiceAccountToken: false
       containers:
       - name: whoami
-        image: traefik/whoami:v1.10.1
+        image: traefik/whoami:v1.11.0
         ports:
         - containerPort: 80
 
