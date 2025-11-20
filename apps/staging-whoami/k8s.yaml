@@ -1,3 +1,11 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: whoami-sa
+  namespace: staging
+automountServiceAccountToken: false
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -13,6 +21,8 @@ spec:
       labels:
         app: whoami
     spec:
+      serviceAccountName: whoami-sa
+      automountServiceAccountToken: false
       containers:
       - name: whoami
         image: traefik/whoami:v1.10.1
