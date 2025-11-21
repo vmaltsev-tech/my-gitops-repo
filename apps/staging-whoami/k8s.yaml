@@ -30,6 +30,12 @@ spec:
         prometheus.io/port: "80"
         prometheus.io/path: "/"
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
       serviceAccountName: whoami-sa
       automountServiceAccountToken: false
       containers:
@@ -44,6 +50,11 @@ spec:
           limits:
             cpu: "300m"
             memory: "384Mi"
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - "ALL"
 
 ---
 apiVersion: v1
