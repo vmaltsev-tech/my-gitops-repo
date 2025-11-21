@@ -31,4 +31,5 @@ metadata:
   name: observability
   labels:
     env: observability
-    managed-by: gitops,
+    managed-by: gitops
+
