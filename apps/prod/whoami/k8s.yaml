@@ -3,6 +3,8 @@ kind: ServiceAccount
 metadata:
   name: whoami-prod-sa
   namespace: prod
+  annotations:
+    iam.gke.io/gcp-service-account: "whoami-prod@academic-works-477104-k1.iam.gserviceaccount.com"
 automountServiceAccountToken: false
 
 ---
