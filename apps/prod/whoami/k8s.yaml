@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: whoami-prod-sa
+  namespace: prod
+automountServiceAccountToken: false
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whoami-prod
+  namespace: prod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: whoami-prod
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: whoami-prod
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/"
+    spec:
+      serviceAccountName: whoami-prod-sa
+      automountServiceAccountToken: false
+      containers:
+      - name: whoami
+        image: traefik/whoami:v1.10.1
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "150m"
+            memory: "256Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whoami-prod
+  namespace: prod
+spec:
+  selector:
+    app: whoami-prod
+  ports:
+  - name: http
+    port: 80
+    targetPort: 80
+
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: whoami-prod-route
+  namespace: prod
+spec:
+  parentRefs:
+  - name: infra-gateway
+    namespace: infra
+  hostnames:
+  - "test.wminor.xyz"
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /prod
+    backendRefs:
+    - name: whoami-prod
+      port: 80
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: whoami-prod-hpa
+  namespace: prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: whoami-prod
+  minReplicas: 3
+  maxReplicas: 8
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 60
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: whoami-prod-pdb
+  namespace: prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: whoami-prod
